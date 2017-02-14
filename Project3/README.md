@@ -1,4 +1,4 @@
-# Lab: Keras Traffic Sign Classification
+# Lab: Behavioral Cloning
 [![Udacity - Self-Driving Car NanoDegree](https://s3.amazonaws.com/udacity-sdc/github/shield-carnd.svg)](http://www.udacity.com/drive)
 
 <img src="https://d17h27t6h515a5.cloudfront.net/topher/2016/October/580d3b19_sign/sign.jpg" width="500" alt="Combined Image" />
