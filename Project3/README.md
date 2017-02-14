@@ -1,7 +1,7 @@
 # Lab: Behavioral Cloning
 [![Udacity - Self-Driving Car NanoDegree](https://s3.amazonaws.com/udacity-sdc/github/shield-carnd.svg)](http://www.udacity.com/drive)
 
-<img src="https://d17h27t6h515a5.cloudfront.net/topher/2016/October/580d3b19_sign/sign.jpg" width="500" alt="Combined Image" />
+<img src="./Intro.PNG" width="500" alt="Combined Image" />
 
 We've prepared a Jupyter notebook that will guide you through the process of building and training a Traffic Sign Classification network with Keras.
 
