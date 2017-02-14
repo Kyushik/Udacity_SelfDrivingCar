@@ -149,7 +149,7 @@ To finish this project, I used `1 x 1 convolution` techniques.
 Batch size was 256, epoch is 16, learning rate is 0.0001 and loss is mean squared error.
 The network structure is as follows. 
 <div align="center">
-  <img src="images/Model_structure.png" alt="Image" width="500">  
+  <img src="images/Model_structure.png" alt="Image" width="200">  
   <p> <br> </p>
 </div> 
 
@@ -158,9 +158,9 @@ The vehicle is a little staggered, but the crash does not happen.
 I only trained the images from track 1, but there the vehicle drives without crash in the track 2 either. 
 
 <p align="center">
-    <img src="images/1.gif" width="320"/> 
-    <img src="images/2_1.gif" width="320"/>
-    <img src="images/2_2.gif" width="320"/>
+    <img src="images/1.gif" width="200"/> 
+    <img src="images/2_1.gif" width="200"/>
+    <img src="images/2_2.gif" width="200"/>
     <br>
     Result gif 
     <br>
