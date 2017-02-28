@@ -171,7 +171,7 @@ But there was `PROBELM` when I used sliding window.
 If the number non-zeros-values are less than min_pixel, the `base points are not changed`.
 The example image is as follows. 
 <div align="center">
-  <img src="images/No_lane_points.PNG" alt="Image" width="300">  
+  <img src="images/No_lane_points.png" alt="Image" width="300">  
 </div> 
 
 **Solution**
@@ -182,7 +182,7 @@ of the base line changes.
 
 The example image is as follows.
 <div align="center">
-  <img src="images/Moving_points.PNG" alt="Image" width="300">  
+  <img src="images/Moving_points.png" alt="Image" width="300">  
 </div> 
 
 The code is as follows. 
@@ -264,7 +264,7 @@ The code is as follows.
 
 My `Lane finding result` image is as follows.
 <div align="center">
-  <img src="images/Lane_finding.PNG" alt="Image" width="500">  
+  <img src="images/Lane_finding.png" alt="Image" width="500">  
 </div>  
 
 ### Road curvature 
@@ -290,7 +290,7 @@ As the Udacity noticed to me, the first left curve's radius of curvature was alm
   
 Explanation image is as follows. 
 <div align="center">
-  <img src="images/offset_from_center.PNG" alt="Image" width="500">  
+  <img src="images/offset_from_center.png" alt="Image" width="500">  
 </div>  
 
 **Future work**
