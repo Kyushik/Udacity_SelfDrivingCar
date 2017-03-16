@@ -158,9 +158,9 @@ The vehicle is a little staggered, but the crash does not happen.
 I only trained the images from track 1, but there the vehicle drives without crash in the track 2 either. 
 
 <p align="center">
-    <img src="images/1.gif" width="300"/> 
-    <img src="images/2_1.gif" width="300"/>
-    <img src="images/2_2.gif" width="300"/>
+    <img src="images/1.gif" width="250"/> 
+    <img src="images/2_1.gif" width="250"/>
+    <img src="images/2_2.gif" width="250"/>
     <br>
     Result gif 
     <br>
