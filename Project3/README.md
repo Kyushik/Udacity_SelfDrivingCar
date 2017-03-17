@@ -41,7 +41,7 @@ The goal of this project is to make the vehicle mimicking human control.
 * making_data.py: Make training data pickle file with some image processing
 
 
-###Simulator 
+### Simulator 
 <p align= "center">
   <img src="./images/Simulator.PNG" width="500" alt="Combined Image" />
 </p>
