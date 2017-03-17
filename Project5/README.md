@@ -162,7 +162,7 @@ The example image is as follows.
 ### Adjust Neural Network Output Threshold
 If I just used softmax and found the window which has more possibility of vehicle, there were few false-positive windows. 
 Therefore, I used the windows which has more than 85% possibility of vehicle.
-```
+```python
 if pred_NN[0,1] > 0.85:
     vehicle_window.append(window)
 ``` 
@@ -179,7 +179,7 @@ I saved 15 frame's heatmap value and sum all of the heatmap (heat_map_sum).
 Then I found the window which has a heat_map_sum pixel value more than 10 and add them to box of interest. 
 
 The code of this part is as follows. 
-```
+```python
 heatmap = add_heat(img_heat_map, vehicle_window)
 
 if len(process_image.heat_map_list) >= 15:
@@ -203,7 +203,7 @@ This helps to track the vehicle because it used saved windows.
 With this technique I could find vehicle windows even if window lost vehicle in a frame. 
 
 The code of this part is as follows. 
-```
+```python
 # Use box of interest 
 # If window has more heat value than threshold, add it to box of interest list 
 if len(window_heatmap) > 0:
