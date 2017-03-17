@@ -9,7 +9,7 @@ Behavior cloning is a project of [Udacity's self driving car nanodegree class](h
 The goal of this project is to make the vehicle mimicking human control. 
 
 
-###Steps of this project
+### Steps of this project
 * Use the simulator to collect data of good driving behavior
 * Build, a convolution neural network in Keras that predicts steering angles from images
 * Train and validate the model with a training and validation set
@@ -17,7 +17,7 @@ The goal of this project is to make the vehicle mimicking human control.
 * Summarize the results with a written report
 
 
-###Environment of this project
+### Environment of this project
 
 **Software** 
 * Windows7 (64bit)
@@ -33,7 +33,7 @@ The goal of this project is to make the vehicle mimicking human control.
 **Data**
 * [Sample dataset of track1 from udacity](https://d17h27t6h515a5.cloudfront.net/topher/2016/December/584f6edd_data/data.zip)
 
-###Description of files
+### Description of files
 * model.h5: Save file of training weights
 * model.json: Save file of training model
 * drive.py: Autonomously drive the vehicle via trained model and data
@@ -63,7 +63,7 @@ I used dataset which was provided by Udacity.
 * Brake
 * Speed 
 
-###Image Processing
+### Image Processing
 
 **Track 1**
 <div align="left">
@@ -81,7 +81,7 @@ Udacity sample data only has the data from track 1
 But as you can see road of track2 is darker and there is shadow on the road. 
 Therefore, I used some image processing techniques to solve this problem. 
 
-##Processed Images
+## Processed Images
 I used 6 different kinds of images for one image. 
 * Original image
 * Dark image (0.6)
@@ -96,7 +96,7 @@ The example images are as follows.
   <p> <br> </p>
 </div> 
 
-##Angle adjustment with 3 cameras
+## Angle adjustment with 3 cameras
 Also, in this project, there are three cameras. Therefore, I decided to use all three images for this project with angle adjustment.
 The three images are as follows. 
 <div align="center">
@@ -107,7 +107,7 @@ The three images are as follows.
 I adjusted the angle of `left image with (+0.2)` and `right image with (-0.2)`
 I also did 5 image processing to the left and right images.
 
-##Image cropping
+## Image cropping
 In this step, I cropped the images as `img = img[55:130, 60:260,:]` to all the images that I processed. 
 The example of cropped images is as follows.
 <div align="center">
@@ -115,7 +115,7 @@ The example of cropped images is as follows.
   <p> <br> </p>
 </div> 
 
-##Image resizing 
+## Image resizing 
 In this step, I resize the image to make the data set file lighter. 
 I resized the cropped file `200 x 75` to `64 x 32` like the followed image
 <div align="center">
@@ -123,7 +123,7 @@ I resized the cropped file `200 x 75` to `64 x 32` like the followed image
   <p> <br> </p>
 </div> 
 
-##Number of data adjusting 
+## Number of data adjusting 
 Lastly, there were so many data that has steering angle 0 like as follows.
 
 Steering | -    | 0    | +                       
@@ -134,16 +134,16 @@ Also, there are many data, so the pickle file can be too big.
 Therefore, I saved half of the - steering, + steering data and quarter of 0 steering data.
 After all the processing, data set was made which has 52812 image data. 
 
-###Training 
+### Training 
 
-##Data distribution
+## Data distribution
 I distributed the data as `Training set`, `Testing set`, `Validation set` as follows.
 
 data | Training set | Testing set | Validation set                       
 ---  | ---          | ---         | ---
 ---  |45,154        |2,640        |5,018 
 
-##Network modeling
+## Network modeling
 
 To finish this project, I used `1 x 1 convolution` techniques.
 Batch size was 256, epoch is 16, learning rate is 0.0001 and loss is mean squared error.
@@ -153,7 +153,7 @@ The network structure is as follows.
   <p> <br> </p>
 </div> 
 
-###Result 
+### Result 
 The vehicle is a little staggered, but the crash does not happen.
 I only trained the images from track 1, but there the vehicle drives without crash in the track 2 either. 
 
