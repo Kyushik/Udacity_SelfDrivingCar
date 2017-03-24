@@ -148,7 +148,7 @@ The result of Perspective Transform is as follows.
 ### Finding Lane Lines 
 Apply histogram at the bottom half of the warped binary image. The result is as follow 
 <div align="center">
-  <img src="images/Warped_Histogram.PNG" alt="Image" width="300">  
+  <img src="images/Warped_Histogram.png" alt="Image" width="300">  
   <p> <br> </p>
 </div> 
 
@@ -164,7 +164,7 @@ I used `Sliding Window` technique to find lane lines
 * If the number of non-zeros values in the region is less then `min_pixel`, then base points are not updated 
 * Slide the window to the next region 
 
-But there was `PROBELM` when I used sliding window.
+But there was `PROBLEM` when I used sliding window.
 
 **Problem**
 
