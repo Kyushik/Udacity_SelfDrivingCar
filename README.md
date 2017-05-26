@@ -47,6 +47,7 @@ The projects of the course are as follows. 📋
 * Vehicle Detection and Tracking 
 
 I finished all the projects of Term 1!! Yeah~~~ 🎉🎉
+
 <img src="./Img_readme/Term1_finished.png" width="500" alt="image" />
 
 ### Term 2
