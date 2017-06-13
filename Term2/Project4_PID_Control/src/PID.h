@@ -17,6 +17,9 @@ public:
   double Ki;
   double Kd;
 
+  double sum_cte;
+  double sum_error;
+
   /*
   * Constructor
   */
@@ -30,12 +33,12 @@ public:
   /*
   * Initialize PID.
   */
-  void Init(double Kp, double Ki, double Kd);
+  void Init(double Kp_, double Ki_, double Kd_);
 
   /*
   * Update the PID error variables given cross track error.
   */
-  void UpdateError(double cte);
+  void UpdateError(double cte, double cte_old, double dt);
 
   /*
   * Calculate the total PID error.
