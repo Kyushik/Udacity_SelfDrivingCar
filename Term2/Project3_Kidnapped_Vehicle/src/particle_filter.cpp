@@ -25,7 +25,8 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 	// Add random Gaussian noise to each particle.
 	// NOTE: Consult particle_filter.h for more information about this method (and others in this file).
 	default_random_engine gen;
-	int num_particles = 1000;
+	
+	num_particles = 1000;
 	
 	// Creates a normal (gaussian) distribution for x, y, theta
 	normal_distribution<double> dist_x(x, std[0]);
@@ -42,7 +43,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 	// Initialization of weights and particles
 	for (int i = 0; i < num_particles; ++i)
 	{
-		particles[i].id = 1;
+		particles[i].id = i;
 		particles[i].x  = dist_x(gen);
 		particles[i].y  = dist_y(gen);
 		particles[i].theta  = angle_theta(gen);
@@ -94,7 +95,6 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 		particles[i].y += dist_y(gen);
 		particles[i].theta += angle_theta(gen);
 	}
-
 }
 
 void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::vector<LandmarkObs>& observations) {
@@ -126,8 +126,6 @@ void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::ve
 			}
 		}
 	}
-
-
 }
 
 void ParticleFilter::updateWeights(double sensor_range, double std_landmark[], 
@@ -143,6 +141,87 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 	//   3.33
 	//   http://planning.cs.uiuc.edu/node99.html
 	
+	for (int i = 0; i < num_particles; ++i)
+	{
+		// Particle values
+		float id_ = particles[i].id;
+		float x_  = particles[i].x;
+		float y_  = particles[i].y;
+		float theta_  = particles[i].theta;
+		float weight_ = particles[i].weight; 
+		
+		// Transformation for OBS
+		vector<LandmarkObs> obs_trans;
+
+		// Observation transformation
+		for (int j = 0; j < observations.size(); ++j)
+		{
+			int   obs_id = observations[j].id;
+			float obs_x  = observations[j].x;
+			float obs_y  = observations[j].y;
+
+			float trans_obs_x = x_ + cos(theta_) * obs_x - sin(theta_) * obs_y;
+			float trans_obs_y = y_ + sin(theta_) * obs_x + cos(theta_) * obs_y;
+
+			// .push_back: add a new element at the end of the vector
+			obs_trans.push_back(LandmarkObs{ obs_id, trans_obs_x, trans_obs_y });
+		}
+
+		// Predicted
+		std::vector<LandmarkObs> predicted;
+		
+		// choose landmark which is in the sensor range
+		for (int j = 0; j < map_landmarks.landmark_list.size(); ++j)
+		{
+			int   land_id = map_landmarks.landmark_list[j].id_i;
+			float land_x  = map_landmarks.landmark_list[j].x_f;
+			float land_y  = map_landmarks.landmark_list[j].y_f;
+
+			if (sqrt((x_ - land_x) * (x_ - land_x) + (y_ - land_y) * (y_ - land_y)) < sensor_range)
+			{
+				// Add landmark
+				predicted.push_back(LandmarkObs{land_id, land_x, land_y});
+			}
+		}
+
+		// Data Association
+		dataAssociation(predicted, obs_trans);
+
+		// Weight Initialization
+		particles[i].weight = 1;
+
+		for (int j = 0; j < obs_trans.size(); ++j)
+		{
+			int   trans_obs_id = obs_trans[j].id;
+			float trans_obs_x  = obs_trans[j].x;
+			float trans_obs_y  = obs_trans[j].y;
+
+			// find predicted which has same id with observation
+			float predicted_x;
+			float predicted_y; 
+
+			for (int k = 0; k < predicted.size(); ++k)
+			{
+				if (trans_obs_id == predicted[k].id)
+				{
+					predicted_x = predicted[k].x;
+					predicted_y = predicted[k].y;
+				}
+			}
+
+			float sigma_x = std_landmark[0];
+			float sigma_y = std_landmark[1];
+
+			float x2 = (trans_obs_x - predicted_x) * (trans_obs_x - predicted_x);
+			float y2 = (trans_obs_y - predicted_y) * (trans_obs_y - predicted_y);
+			float sigma_x2 = sigma_x * sigma_x;
+			float sigma_y2 = sigma_y * sigma_y;
+
+			float P_ = (1 / (2 * M_PI * sigma_x * sigma_y)) * exp( - ((x2 / (2 * sigma_x2))  + (y2 / (2 * sigma_y2))));
+
+			particles[i].weight *= P_;
+		}
+	}
 }
 
 void ParticleFilter::resample() {
