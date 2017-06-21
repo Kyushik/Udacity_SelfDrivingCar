@@ -12,6 +12,10 @@ constexpr double pi() { return M_PI; }
 double deg2rad(double x) { return x * pi() / 180; }
 double rad2deg(double x) { return x * 180 / pi(); }
 
+double p_gain = 0.1;
+double i_gain = 0.0001;
+double d_gain = 1.0;
+
 // Checks if the SocketIO event has JSON data.
 // If there is data the JSON object in string format will be returned,
 // else the empty string "" will be returned.
@@ -34,19 +38,18 @@ int main()
 
   PID pid;
   // TODO: Initialize the pid variable.
-
+  pid.Init(p_gain, i_gain, d_gain);
+  
   h.onMessage([&pid](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
-    double time_old = clock();
-    double cte_old  = 0;
-
-    double throttle = 0;
-
-    // Initialize PID controller
-    pid.Init(0.05, 0, 0.005);
-
+    
+    // Initialize updated gain value 
+    double p_update = 0;
+    double i_update = 0;
+    double d_update = 0;
+    
     if (length && length > 2 && data[0] == '4' && data[1] == '2')
     {
       auto s = hasData(std::string(data).substr(0, length));
@@ -66,12 +69,19 @@ int main()
           * another PID controller to control the speed!
           */
 
-          double dt = (clock() - time_old) / 1000000.0;
+          // Update pid gain according to speed
+          p_update = p_gain + p_gain * (speed / 50.0);
+          i_update = i_gain + i_gain * (speed / 50.0);
+          d_update = d_gain + d_gain * (speed / 50.0);
 
-          pid.UpdateError(cte, cte_old, dt);
+          // Update Error
+          pid.UpdateError(cte);
+
+          // Update PID gain
+          pid.UpdateCoefficient(p_update, i_update, d_update);
+          
+          // Get steering value 
           steer_value = pid.TotalError();
-
-          cte_old = cte;
 
           // Steering angle boundary [-1, 1]
           if (steer_value > 1)
@@ -84,18 +94,13 @@ int main()
             steer_value = -1;
           }
 
-          // Control throttle value
-          if (fabs(cte) > 1)
+          // Default throttle is 0.5
+          double throttle = 0.5;
+
+          // If angle is high or cte is high then decel
+          if (fabs(angle) > 5 || fabs(cte) > 0.5)
           {
             throttle = 0.1;
-          }
-          else if (fabs(cte) > 0.2)
-          {
-            throttle = 0.2;
-          }
-          else
-          {
-            throttle = 0.5;
           }
           
           // DEBUG

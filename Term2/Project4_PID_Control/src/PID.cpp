@@ -11,34 +11,46 @@ PID::PID() {}
 
 PID::~PID() {}
 
-void PID::Init(double Kp_, double Ki_, double Kd_) 
+void PID::Init(double Kp, double Ki, double Kd) 
 {
     // Initialize the errors
     p_error = 0;
     i_error = 0;
     d_error = 0;
 
-    // Initializa the coefficients
-    Kp = Kp_;
-    Ki = Ki_;
-    Kd = Kd_;
+    // Initialize the coefficients
+    this -> Kp = Kp;
+    this -> Ki = Ki;
+    this -> Kd = Kd;
 
-    sum_cte = 0;
-    sum_error = 0;
 }
 
-void PID::UpdateError(double cte, double cte_old, double dt) 
+void PID::UpdateCoefficient(double Kp, double Ki, double Kd)
 {
-    sum_cte = sum_cte + cte * dt;
+    // Update PID coefficients
+    this -> Kp = Kp;
+    this -> Ki = Ki;
+    this -> Kd = Kd;
+}
+
+void PID::UpdateError(double cte) 
+{
+    // Update PID error
+    double cte_old = p_error; 
 
     p_error = cte;
-    i_error = sum_cte;
-    d_error = (cte - cte_old) / dt;
-    std::cout<<d_error<<std::endl;
+    i_error += cte;
+    d_error = cte - cte_old;
+
 }
 
 double PID::TotalError() 
 {
+    // Calculate Steering angle 
+    std::cout << "P value: " << -Kp * p_error << std::endl;
+    std::cout << "I value: " << -Ki * i_error << std::endl;
+    std::cout << "D value: " << -Kd * d_error << std::endl;
+
     double steering_angle = -Kp * p_error -Ki * i_error -Kd * d_error;
     return steering_angle;
 }
