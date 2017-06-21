@@ -16,6 +16,10 @@ double p_gain = 0.1;
 double i_gain = 0.0001;
 double d_gain = 1.0;
 
+double step = 1.0;
+double cte_sum  = 0;
+double cte_mean = 0;
+
 // Checks if the SocketIO event has JSON data.
 // If there is data the JSON object in string format will be returned,
 // else the empty string "" will be returned.
@@ -95,7 +99,7 @@ int main()
           }
 
           // Default throttle is 0.5
-          double throttle = 0.5;
+          double throttle = 0.4;
 
           // If angle is high or cte is high then decel
           if (fabs(angle) > 5 || fabs(cte) > 0.5)
@@ -103,8 +107,13 @@ int main()
             throttle = 0.1;
           }
           
+          // Calculate average cte
+          cte_sum += fabs(cte); 
+          cte_mean = cte_sum / step;
+          step += 1.0;
+
           // DEBUG
-          std::cout << "CTE: " << cte << " Steering Value: " << steer_value << std::endl;
+          std::cout << "CTE: " << cte << " Average CTE: " << cte_mean << " Steering Value: " << steer_value << std::endl;
 
           json msgJson;
           msgJson["steering_angle"] = steer_value;
