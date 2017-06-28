@@ -11,11 +11,16 @@
 
 // for convenience
 using json = nlohmann::json;
+using Eigen::VectorXd;
 
 // For converting back and forth between radians and degrees.
 constexpr double pi() { return M_PI; }
 double deg2rad(double x) { return x * pi() / 180; }
 double rad2deg(double x) { return x * 180 / pi(); }
+
+double mean_cte = 0;
+double sum_cte = 0;
+double step = 0;
 
 // Checks if the SocketIO event has JSON data.
 // If there is data the JSON object in string format will be returned,
@@ -77,7 +82,7 @@ int main() {
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
     string sdata = string(data).substr(0, length);
-    cout << sdata << endl;
+    //cout << sdata << endl;
     if (sdata.size() > 2 && sdata[0] == '4' && sdata[1] == '2') {
       string s = hasData(sdata);
       if (s != "") {
@@ -98,18 +103,63 @@ int main() {
           * Both are in between [-1, 1].
           *
           */
-          double steer_value;
-          double throttle_value;
+
+          // Global coord -> Vehicle coord
+          int N_pts = ptsx.size();
+
+          VectorXd ptsx_local = VectorXd(N_pts);
+          ptsx_local.fill(0);
+          
+          VectorXd ptsy_local = VectorXd(N_pts);
+          ptsy_local.fill(0);
+
+          for (int i = 1; i < N_pts; i++)
+          {
+            ptsx_local[i] = (ptsx[i] - px) *  cos(psi) + (ptsy[i] - py) * sin(psi);
+            ptsy_local[i] = (ptsx[i] - px) * -sin(psi) + (ptsy[i] - py) * cos(psi);
+          }
+ 
+          // Get polynomial coefficients (Third order)
+          auto coeff  = polyfit(ptsx_local, ptsy_local, 3);
+          
+          // Get Cross Traffic Error (cte)
+          double cte  = - polyeval(coeff, 0.0);
+
+          sum_cte += fabs(cte); 
+          step += 1.0;
+          mean_cte = sum_cte / step;
+
+          // Get Heading Error 
+          double epsi = -atan(coeff[1]);
+
+          // Get state 
+          Eigen::VectorXd state(6);
+          state << 0, 0, 0, v, cte, epsi;
+
+          // MPC function
+          auto output = mpc.Solve(state, coeff);
+          
+          // Get steering value from mpc and normalize
+          // Steer_value: -0.43633 ~ 0.43633
+          // 0.43633rad -> 25deg
+          double steer_value = output[0] / deg2rad(25);
+          
+          // Get throttle value from mpc
+          // throttle value: -1 ~ 1
+          double throttle_value = output[1];
 
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
           // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
-          msgJson["steering_angle"] = steer_value;
+          msgJson["steering_angle"] = - steer_value;
           msgJson["throttle"] = throttle_value;
 
           //Display the MPC predicted trajectory 
           vector<double> mpc_x_vals;
           vector<double> mpc_y_vals;
+
+          mpc_x_vals = mpc.x_vector;
+          mpc_y_vals = mpc.y_vector;
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Green line
@@ -121,6 +171,15 @@ int main() {
           vector<double> next_x_vals;
           vector<double> next_y_vals;
 
+          next_x_vals.resize(N_pts);
+          next_y_vals.resize(N_pts);
+
+          for (int i = 0; i < N_pts; i++)
+          {
+            next_x_vals[i] = ptsx_local[i];
+            next_y_vals[i] = ptsy_local[i];
+          }
+
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Yellow line
 
@@ -129,7 +188,16 @@ int main() {
 
 
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
-          std::cout << msg << std::endl;
+          //std::cout << msg << std::endl;
+
+          // Check result 
+          std::cout << "\nStep: " << step << std::endl;
+          std::cout << "cte: " << cte << std::endl;
+          std::cout << "epsi: " << epsi << std::endl;
+          std::cout << "Steering: " << -steer_value << std::endl;
+          std::cout << "Throttle: " << throttle_value << std::endl;
+          std::cout << "Mean cte: " << mean_cte << std::endl;
+
           // Latency
           // The purpose is to mimic real driving conditions where
           // the car does actuate the commands instantly.

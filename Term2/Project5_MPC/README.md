@@ -1,115 +1,292 @@
-# CarND-Controls-MPC
-Self-Driving Car Engineer Nanodegree Program
+# Lab: Model Predictive Control (MPC)
+[![Udacity - Self-Driving Car NanoDegree](https://s3.amazonaws.com/udacity-sdc/github/shield-carnd.svg)](http://www.udacity.com/drive)
 
----
 
-## Dependencies
+
+## Introduction
+
+`MPC(Model Predictive Control)` is a project of [Udacity's self driving car nanodegree class](https://www.udacity.com/drive). 
+The goal of this project is control the vehicle to follow the reference path. 
+
+### Environment of this project
+
+**Software** 
+* Ubuntu 16.04 (64bit)
 
 * cmake >= 3.5
- * All OSes: [click here for installation instructions](https://cmake.org/install/)
+
+* All OSes: [click here for installation instructions](https://cmake.org/install/)
+
 * make >= 4.1
-  * Linux: make is installed by default on most Linux distros
-  * Mac: [install Xcode command line tools to get make](https://developer.apple.com/xcode/features/)
-  * Windows: [Click here for installation instructions](http://gnuwin32.sourceforge.net/packages/make.htm)
+
+  - Linux: make is installed by default on most Linux distros
+  - Mac: [install Xcode command line tools to get make](https://developer.apple.com/xcode/features/)
+  - Windows: [Click here for installation instructions](http://gnuwin32.sourceforge.net/packages/make.htm)
+
 * gcc/g++ >= 5.4
-  * Linux: gcc / g++ is installed by default on most Linux distros
-  * Mac: same deal as make - [install Xcode command line tools]((https://developer.apple.com/xcode/features/)
-  * Windows: recommend using [MinGW](http://www.mingw.org/)
+
+  - Linux: gcc / g++ is installed by default on most Linux distros
+  - Mac: same deal as make - [install Xcode command line tools]((https://developer.apple.com/xcode/features/)
+  - Windows: recommend using [MinGW](http://www.mingw.org/)
+
 * [uWebSockets](https://github.com/uWebSockets/uWebSockets)
-  * Run either `install-mac.sh` or `install-ubuntu.sh`.
-  * If you install from source, checkout to commit `e94b6e1`, i.e.
+
+  - Run either `./install-mac.sh` or `./install-ubuntu.sh`.
+
+  - If you install from source, checkout to commit `e94b6e1`, i.e.
+
     ```
     git clone https://github.com/uWebSockets/uWebSockets 
     cd uWebSockets
     git checkout e94b6e1
     ```
+
     Some function signatures have changed in v0.14.x. See [this PR](https://github.com/udacity/CarND-MPC-Project/pull/3) for more details.
-* Fortran Compiler
-  * Mac: `brew install gcc` (might not be required)
-  * Linux: `sudo apt-get install gfortran`. Additionall you have also have to install gcc and g++, `sudo apt-get install gcc g++`. Look in [this Dockerfile](https://github.com/udacity/CarND-MPC-Quizzes/blob/master/Dockerfile) for more info.
-* [Ipopt](https://projects.coin-or.org/Ipopt)
-  * Mac: `brew install ipopt`
-  * Linux
-    * You will need a version of Ipopt 3.12.1 or higher. The version available through `apt-get` is 3.11.x. If you can get that version to work great but if not there's a script `install_ipopt.sh` that will install Ipopt. You just need to download the source from the Ipopt [releases page](https://www.coin-or.org/download/source/Ipopt/) or the [Github releases](https://github.com/coin-or/Ipopt/releases) page.
-    * Then call `install_ipopt.sh` with the source directory as the first argument, ex: `bash install_ipopt.sh Ipopt-3.12.1`. 
-  * Windows: TODO. If you can use the Linux subsystem and follow the Linux instructions.
-* [CppAD](https://www.coin-or.org/CppAD/)
-  * Mac: `brew install cppad`
-  * Linux `sudo apt-get install cppad` or equivalent.
-  * Windows: TODO. If you can use the Linux subsystem and follow the Linux instructions.
-* [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page). This is already part of the repo so you shouldn't have to worry about it.
-* Simulator. You can download these from the [releases tab](https://github.com/udacity/self-driving-car-sim/releases).
-* Not a dependency but read the [DATA.md](./DATA.md) for a description of the data sent back from the simulator.
+
+* Simulator. You can download these from the [this page](https://github.com/udacity/self-driving-car-sim/releases) in the classroom.
+
+There's an experimental patch for windows in this [PR](https://github.com/udacity/CarND-PID-Control-Project/pull/3)
 
 
-## Basic Build Instructions
 
+**Hardware**
+
+* CPU: Intel(R) Core(TM) i7-4790K CPU @ 4.00GHZ
+* GPU: GeForce GTX 1080
+* Memory: 8GB
+
+
+
+### Basic Build Instructions
 
 1. Clone this repo.
 2. Make a build directory: `mkdir build && cd build`
 3. Compile: `cmake .. && make`
-4. Run it: `./mpc`.
+4. Run it: `./mpc`. 
 
-## Tips
+---
 
-1. It's recommended to test the MPC on basic examples to see if your implementation behaves as desired. One possible example
-is the vehicle starting offset of a straight line (reference). If the MPC implementation is correct, after some number of timesteps
-(not too many) it should find and track the reference line.
-2. The `lake_track_waypoints.csv` file has the waypoints of the lake track. You could use this to fit polynomials and points and see of how well your model tracks curve. NOTE: This file might be not completely in sync with the simulator so your solution should NOT depend on it.
-3. For visualization this C++ [matplotlib wrapper](https://github.com/lava/matplotlib-cpp) could be helpful.
+## MPC
 
-## Editor Settings
+### Vehicle Model 
 
-We've purposefully kept editor configuration files out of this repo in order to
-keep it as simple and environment agnostic as possible. However, we recommend
-using the following settings:
+In this project, I built a Kinematic vehicle model. 
 
-* indent using spaces
-* set tab width to 2 spaces (keeps the matrices in source code aligned)
+Kinematic model is simplification of dynamic model which ignores tire forces, gravity, mass, etc. 
 
-## Code Style
+The simplification reduces accuracy, but it makes it more tractable. 
 
-Please (do your best to) stick to [Google's C++ style guide](https://google.github.io/styleguide/cppguide.html).
 
-## Project Instructions and Rubric
 
-Note: regardless of the changes you make, your project must be buildable using
-cmake and make!
+The state of vehicle model is [$x$, $y$, $\psi$, $v$] and actuator (control input) is [$\delta$, $a$]. 
 
-More information is only accessible by people who are already enrolled in Term 2
-of CarND. If you are enrolled, see [the project page](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/f1820894-8322-4bb3-81aa-b26b3c6dcbaf/lessons/b1ff3be0-c904-438e-aad3-2b5379f0e0c3/concepts/1a2255a0-e23c-44cf-8d41-39b8a3c8264a)
-for instructions and the project rubric.
+* $x$ :  X position of the vehicle
+* $y$ :  Y position of the vehicle
+* $\psi$ :  Heading angle
+* $v$ :  Velocity
+* $\delta$ :  steering wheel angle
+* $a$ :  throttle and brake
 
-## Hints!
+Also, the errors such as `Cross Traffic Error` ($cte$) and `Orientation error` ($e{\psi}$) are added as a state. 
 
-* You don't have to follow this directory structure, but if you do, your work
-  will span all of the .cpp files here. Keep an eye out for TODOs.
+* Cross Traffic Error: Distance of vehicle from trajectory
+* Orientation Error: Difference of vehicle orientation and trajectory orientation
 
-## Call for IDE Profiles Pull Requests
+Therefore, the final state of vehicle is [$x$, $y$, $\psi$, $v$, $cte$, $e\psi$]
 
-Help your fellow students!
+Update equation of vehicle state is as follows. 
 
-We decided to create Makefiles with cmake to keep this project as platform
-agnostic as possible. Similarly, we omitted IDE profiles in order to we ensure
-that students don't feel pressured to use one IDE or another.
+* $x_{t+1} =x_t +v_t *cos(\psi_t) * dt $
+* $y_{t+1} = y_t + v_t * sin(\psi_t) *dt$
+* $\psi_{t+1} = \psi_t + (v_t / L_f) * \delta * dt $
+* $v_{t+1} = v_t + a_t * dt$
+* $cte_{t+1} = f(x_t) - y_t + (v_t * sin(e\psi_t) * dt)$ 
+* $e\psi_{t+1} = e\psi_t + (v_t / L_f) * \delta_t * dt$
 
-However! I'd love to help people get up and running with their IDEs of choice.
-If you've created a profile for an IDE that you think other students would
-appreciate, we'd love to have you add the requisite profile files and
-instructions to ide_profiles/. For example if you wanted to add a VS Code
-profile, you'd add:
+In the project, reference line is a third order polynomial ( f ) 
 
-* /ide_profiles/vscode/.vscode
-* /ide_profiles/vscode/README.md
 
-The README should explain what the profile does, how to take advantage of it,
-and how to install it.
 
-Frankly, I've never been involved in a project with multiple IDE profiles
-before. I believe the best way to handle this would be to keep them out of the
-repo root to avoid clutter. My expectation is that most profiles will include
-instructions to copy files to a new location to get picked up by the IDE, but
-that's just a guess.
+### N & dt
 
-One last note here: regardless of the IDE used, every submitted project must
-still be compilable with cmake and make./
+At first, I set timestep length(N) and duration (dt) 
+
+```c++
+// TODO: Set the timestep length and duration
+size_t N = 15;
+double dt = 0.05;
+```
+
+At the udacity lecture, `T = N * dt`. Also, it said T should be as large as possible, while dt should be as small as possible. 
+
+* Number of Timesteps (N) 
+  * The length of control input vector is determined by N
+  * $[\delta_1, a_1, \delta_2, a_2, ..., \delta_{N-1}, a_{N-1}]$ 
+  * Thus N determines the number of variables which are optimized by MPC.
+  * This is also the major driver of computational cost. 
+* Timestep Duration (dt)
+  * MPC attempts to approximate a continuous reference trajectory by means of discrete paths between actuation.
+  * Larger value of dt result less frequent actuations, which makes it harder to accurately approximate a continuous reference trajectory. 
+  * This is calssed `Discretization error`
+
+
+
+In my case, I set N = 10 and dt = 0.1 at the first time. In this case, actuation was so discretized that it was hard to control the vehicle to follow the trajectory. Therefore, I set the dt value half of the previous value (0.05) and increased N value to 20. It worked well, but sometimes the trajectory twisted if the road is too curvy. I guessed large horizon caused this problem, so I reduced N value as 15. I could set dt smaller than 0.05 to prevent large horizon, but I worried about large computational cost. Therefore, my final values about time step is N = 15, dt = 0.05 
+
+
+
+### Cost Value 
+
+Setting the cost value is as follows.
+
+```c++
+// Cost is stored in the first element of 'fg'
+fg[0] = 0;
+
+double ref_speed = 65;
+
+double weight_cte  = 0.5;
+double weight_epsi = 0.5;
+double weight_vel  = 0.1;
+
+double weight_del  = 1;
+double weight_acc  = 1;
+
+double weight_del_diff = 10000;
+double weight_acc_diff = 0.5;
+
+// The part of the cost based on the refetence state
+for (int i = 0; i < N; i++)
+{
+fg[0] += weight_cte * CppAD::pow(vars[cte_start + i], 2);
+fg[0] += weight_epsi * CppAD::pow(vars[epsi_start + i], 2);
+fg[0] += weight_vel * CppAD::pow(vars[v_start + i] - ref_speed, 2);
+}
+
+// Minimize the use of actuators
+for (int i = 0; i < N - 1; i++)
+{
+fg[0] += weight_del * CppAD::pow(vars[delta_start + i], 2);
+fg[0] += weight_acc * CppAD::pow(vars[a_start + i], 2);
+}
+
+// Minimize the value gap between sequential actuations
+for (int i = 0; i < N - 2; i++)
+{
+fg[0] += weight_del_diff * CppAD::pow(vars[delta_start + i + 1] - vars[delta_start + i], 2);
+fg[0] += weight_acc_diff * CppAD::pow(vars[a_start + i + 1] - vars[a_start + i], 2);
+}
+```
+
+fg[0] is the cost value. 
+
+I used `reference state` ($cte$, $e\psi$, velocity error), `Use of actuators`, `Value gap between sequential actuations` as cost value. Also, I used weight to each part of cost value to control the importance of the parts of the cost values. 
+
+
+
+### Vehicle State Update 
+
+As I mentioned before, the state of vehicles are [$x$, $y$, $\psi$, $v$, $cte$, $e\psi$]. I updated those values as follows. 
+
+```c++
+// Calculate values according to the vehicle model
+fg[1 + x_start + i] = x_1 - (x_0 + v_0 * CppAD::cos(psi_0) * dt);
+fg[1 + y_start + i] = y_1 - (y_0 + v_0 * CppAD::sin(psi_0) * dt);
+fg[1 + psi_start + i] = psi_1 - (psi_0 + v_0 * delta_0 / Lf * dt);
+fg[1 + v_start + i] = v_1 - (v_0 + a_0 * dt);
+fg[1 + cte_start + i] = cte_1 - ((f_0 - y_0) + (v_0 * CppAD::sin(epsi_0) * dt));
+fg[1 + epsi_start + i] = epsi_1 - ((psi_0 - psi_des_0) + v_0 * delta_0 / Lf *dt);
+```
+
+
+
+### Polynomial Fitting
+
+I needed to get coefficient of third order polynomial. 
+
+I got global x, y position of the waypoints as `ptsx` and `ptsy`
+
+At first, I needed to transform these global values to vehicle local coordinate.
+
+The code of global to local transform is as follows. 
+
+```c++
+int N_pts = ptsx.size();
+
+VectorXd ptsx_local = VectorXd(N_pts);
+ptsx_local.fill(0);
+
+VectorXd ptsy_local = VectorXd(N_pts);
+ptsy_local.fill(0);
+
+for (int i = 1; i < N_pts; i++)
+{
+ptsx_local[i] = (ptsx[i] - px) *  cos(psi) + (ptsy[i] - py) * sin(psi);
+ptsy_local[i] = (ptsx[i] - px) * -sin(psi) + (ptsy[i] - py) * cos(psi);
+}
+```
+
+ With all the local x, y position, I could get coefficient of third order polynomial. 
+
+```c++
+// Get polynomial coefficients (Third order)
+auto coeff  = polyfit(ptsx_local, ptsy_local, 3);
+```
+
+$cte$ is the value when x of polynomial is 0 and $e\psi$ is first order coefficient of polynomial. 
+
+Therefore, I could get $cte$ and $e\psi$ with the coefficients. 
+
+
+
+### Vehicle Control
+
+Using the state and coefficients of the third order polynomial,  I could get vector of control inputs that minimizes the cost function. In the project `Ipopt` solver was provided.   
+
+Also, `Latency` was conducted to mimic the real driving condition. The code is as follows. 
+
+```c++
+// Latency
+// The purpose is to mimic real driving conditions where
+// the car does actuate the commands instantly.
+//
+// Feel free to play around with this value but should be to drive
+// around the track with 100ms latency.
+//
+// NOTE: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE
+// SUBMITTING.
+this_thread::sleep_for(chrono::milliseconds(100));
+```
+
+  In a real car, an actuation command won't execute instantly. There is a delay as the command propagates through the system. Therefore, 100 milliseconds were used as a delay (latency). 
+
+  PID controller controls vehicle with respect to the current state, but actuation will be performed in the future state. This leads instability. 
+
+  However, with vehicle model, actuator dynamics can easily be modeled. Therefore, MPC can deal with latency much more effectively than PID control. 
+
+
+
+## Simulation Result
+
+I used MPC technique to vehicle simulator which was provided by Udacity.
+
+The example image of simulation which is provided by udacity is as follows. 
+
+![example_image](./Images/example_image.png)
+
+
+
+The result was good. No tire left the drivable portion of the track surface. 
+
+The vehicle didn't pop up onto ledges or roll over any surfaces. 
+
+Result of my simulation after 1 lap is as follows.
+
+![Result](./Images/Result.png) 
+
+About after 1 lap, average cte was 0.075. 
+
+This result is way better than the result of `PID control` even though MPC had latency! :smiley:.
+
+With PID control, average cte of 1 lap was about 0.37. 
+

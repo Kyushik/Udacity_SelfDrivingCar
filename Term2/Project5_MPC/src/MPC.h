@@ -10,6 +10,9 @@ class MPC {
  public:
   MPC();
 
+  std::vector<double> x_vector;
+  std::vector<double> y_vector;
+
   virtual ~MPC();
 
   // Solve the model given an initial state and polynomial coefficients.
