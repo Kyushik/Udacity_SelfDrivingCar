@@ -92,4 +92,6 @@ The projects of the course are as follows. 📋
 
 I finished all the projects of Term 2!! Yeah~~~ 🎉🎉
 
-For now, I am waiting for term 3!! ​:pencil2:​
+For now, I am waiting for term 3!! :pencil2:
+
+The topic of term 3 is `Path Planning, Concentrations and Systems` 
