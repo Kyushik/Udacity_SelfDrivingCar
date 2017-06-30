@@ -88,4 +88,8 @@ The projects of the course are as follows. 📋
 - PID Control
 - Model Predictive Control 
 
-For now, I am working on projects of term 2!! :pencil2:
+
+
+I finished all the projects of Term 2!! Yeah~~~ 🎉🎉
+
+For now, I am waiting for term 3!! ​:pencil2:​
