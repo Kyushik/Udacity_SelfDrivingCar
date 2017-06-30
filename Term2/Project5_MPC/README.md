@@ -113,8 +113,8 @@ At first, I set timestep length(N) and duration (dt)
 
 ```c++
 // TODO: Set the timestep length and duration
-size_t N = 15;
-double dt = 0.05;
+size_t N = 10;
+double dt = 0.1;
 ```
 
 At the udacity lecture, `T = N * dt`. Also, it said T should be as large as possible, while dt should be as small as possible. 
@@ -131,7 +131,7 @@ At the udacity lecture, `T = N * dt`. Also, it said T should be as large as poss
 
 
 
-In my case, I set N = 10 and dt = 0.1 at the first time. In this case, actuation was so discretized that it was hard to control the vehicle to follow the trajectory. Therefore, I set the dt value half of the previous value (0.05) and increased N value to 20. It worked well, but sometimes the trajectory twisted if the road is too curvy. I guessed large horizon caused this problem, so I reduced N value as 15. I could set dt smaller than 0.05 to prevent large horizon, but I worried about large computational cost. Therefore, my final values about time step is N = 15, dt = 0.05 
+In my case, l set the values about time step is N = 12, dt = 0.05. But 12 * 0.05 =  0.6 is too short. Therefore, I set my final values of N and dt as N = 10 and dt = 0.1 
 
 
 
@@ -266,6 +266,54 @@ this_thread::sleep_for(chrono::milliseconds(100));
 
 
 
+I predicted the state with vehicle model according to the latency (100 ms)
+
+The codes are as follows.
+
+```c++
+// Get actuator values
+const double delta = j[1]["steering_angle"];
+const double a = j[1]["throttle"];
+const double latency = 0.1;
+
+// mph -> m/s
+v = 0.4474 * v; 
+
+// Prediction according to the latency 
+double x_pred = v * latency;
+double phi_pred = -v * delta * latency / 2.67;
+double v_pred = v + a * latency;
+
+// Get polynomial coefficients (Third order)
+auto coeff  = polyfit(ptsx_local, ptsy_local, 3);
+
+// Calculate CTE
+double cte = - polyeval(coeff, 0.0);
+
+sum_cte += fabs(cte); 
+step += 1.0;
+mean_cte = sum_cte / step;
+
+// Get Heading Error 
+double epsi = -atan(coeff[1]);  
+
+// Prediction of cte and epsi
+double cte_pred = cte + v * sin(epsi) * latency;
+double epsi_pred = epsi + phi_pred;
+
+// Get state 
+Eigen::VectorXd state(6);
+state << x_pred, 0, phi_pred, v_pred, cte_pred, epsi_pred;
+```
+
+With vehicle model, I could calculate predicted $x$, $phi$ and $v$ of vehicle after 100ms. 
+
+Also, Using predicted position $x_{pred}$, I calculated predicted cte and epsi.
+
+With all those predicted values, I could get predicted state of the vehicle after 100ms (latency) 
+
+
+
 ## Simulation Result
 
 I used MPC technique to vehicle simulator which was provided by Udacity.
@@ -284,7 +332,7 @@ Result of my simulation after 1 lap is as follows.
 
 ![Result](./Images/Result.png) 
 
-About after 1 lap, average cte was 0.075. 
+About after 1 lap, average cte was 0.07. 
 
 This result is way better than the result of `PID control` even though MPC had latency! :smiley:.
 

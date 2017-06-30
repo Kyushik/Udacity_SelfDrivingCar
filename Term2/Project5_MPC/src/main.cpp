@@ -104,6 +104,19 @@ int main() {
           *
           */
 
+          // Get actuator values
+          const double delta = j[1]["steering_angle"];
+          const double a = j[1]["throttle"];
+          const double latency = 0.1;
+
+          // mph -> m/s
+          v = 0.4474 * v; 
+
+          // Prediction according to the latency 
+          double x_pred = v * latency;
+          double phi_pred = -v * delta * latency / 2.67;
+          double v_pred = v + a * latency;
+
           // Global coord -> Vehicle coord
           int N_pts = ptsx.size();
 
@@ -122,19 +135,23 @@ int main() {
           // Get polynomial coefficients (Third order)
           auto coeff  = polyfit(ptsx_local, ptsy_local, 3);
           
-          // Get Cross Traffic Error (cte)
-          double cte  = - polyeval(coeff, 0.0);
-
+          // Calculate CTE
+          double cte = - polyeval(coeff, 0.0);
+          
           sum_cte += fabs(cte); 
           step += 1.0;
           mean_cte = sum_cte / step;
 
           // Get Heading Error 
-          double epsi = -atan(coeff[1]);
+          double epsi = -atan(coeff[1]);  
+
+          // Prediction of cte and epsi
+          double cte_pred = cte + v * sin(epsi) * latency;
+          double epsi_pred = epsi + phi_pred;
 
           // Get state 
           Eigen::VectorXd state(6);
-          state << 0, 0, 0, v, cte, epsi;
+          state << x_pred, 0, phi_pred, v_pred, cte_pred, epsi_pred;
 
           // MPC function
           auto output = mpc.Solve(state, coeff);

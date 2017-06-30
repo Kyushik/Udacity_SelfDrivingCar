@@ -6,8 +6,8 @@
 using CppAD::AD;
 
 // TODO: Set the timestep length and duration
-size_t N = 15;
-double dt = 0.05;
+size_t N = 10;
+double dt = 0.1;
 
 // Variables:  
 // x, y, psi, v, cte, epsi, delta, a
@@ -50,7 +50,7 @@ class FG_eval {
     // Cost is stored in the first element of 'fg'
     fg[0] = 0;
 
-    double ref_speed = 65;
+    double ref_speed = 85 * 0.44704;
 
     double weight_cte  = 0.5;
     double weight_epsi = 0.5;
@@ -59,7 +59,7 @@ class FG_eval {
     double weight_del  = 1;
     double weight_acc  = 1;
 
-    double weight_del_diff = 10000;
+    double weight_del_diff = 12000;
     double weight_acc_diff = 0.5;
 
     // The part of the cost based on the refetence state
