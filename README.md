@@ -92,6 +92,59 @@ The projects of the course are as follows. 📋
 
 I finished all the projects of Term 2!! Yeah~~~ 🎉🎉
 
-For now, I am waiting for term 3!! :pencil2:
 
-The topic of term 3 is `Path Planning, Concentrations and Systems` 
+
+### Term 3
+
+Main topic of Term 3 is `Path Planning, Concentrations and pLANNING` 
+
+The contents of the course are as follows. 📔
+
+- Search
+
+- Prediction
+
+- Behavior Planning
+
+- Trajectory Generation
+
+- Advanced Deep Learning
+
+- Fully Convolutional Networks
+
+- Scene Understanding
+
+- Inference Performance
+
+- Functional Safety
+
+- Introduction to Functional Safety
+
+- Safety Plan
+
+- Hazard Analysis and Risk Assessment
+
+- Functional Safety Concept
+
+- Technical Safety Concept
+
+- Functional Safety at the Softward and Hardware Levels 
+
+- Autonomous Vehicle Architecture
+
+- Introduction to ROS
+
+- Packages and Catkin Workspaces
+
+- Writing ROS Nodes
+
+- Completing the Program
+
+  ​
+
+The projects of the course are as follows. 📋
+
+- Path Planning Project
+- Semantic Segmentation Project
+- Functional Safety
+- System Integration Project
