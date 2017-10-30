@@ -209,12 +209,12 @@ int main() {
 
       if (s != "") {
         auto j = json::parse(s);
-        
+
         string event = j[0].get<string>();
-        
+
         if (event == "telemetry") {
           // j[1] is the data JSON object
-          
+
         	// Main car's localization Data
           	double car_x = j[1]["x"];
           	double car_y = j[1]["y"];
@@ -226,7 +226,7 @@ int main() {
           	// Previous path data given to the Planner
           	auto previous_path_x = j[1]["previous_path_x"];
           	auto previous_path_y = j[1]["previous_path_y"];
-          	// Previous path's end s and d values 
+          	// Previous path's end s and d values
           	double end_path_s = j[1]["end_path_s"];
           	double end_path_d = j[1]["end_path_d"];
 
@@ -240,6 +240,103 @@ int main() {
 
 
           	// TODO: define a path made up of (x,y) points that the car will visit sequentially every .02 seconds
+            // Number of path planning points
+            double dist_inc = 0.3;
+            int num_points = 50;
+            int road_index;
+
+            // Lane Keeping
+            double target_s = car_s + num_points * dist_inc;
+            double target_d;
+
+            // Get current lane
+            int current_lane = 0;
+            if (car_d <= 4) {
+              current_lane = 1; // First lane
+              target_d = 2;
+            } else if (car_d <= 8) {
+              current_lane = 2;
+              target_d = 6;
+            } else {
+              current_lane = 3;
+              target_d = 10;
+            }
+
+            vector<double> target_xy;
+            target_xy = getXY(target_s, target_d, map_waypoints_s, map_waypoints_x, map_waypoints_y);
+
+            double pos_x;
+            double pos_y;
+            double angle;
+            int path_size = previous_path_x.size();
+
+            for(int i = 0; i < path_size; i++)
+            {
+                next_x_vals.push_back(previous_path_x[i]);
+                next_y_vals.push_back(previous_path_y[i]);
+            }
+
+            if(path_size == 0)
+            {
+                pos_x = car_x;
+                pos_y = car_y;
+                angle = deg2rad(car_yaw);
+            }
+            else
+            {
+                pos_x = previous_path_x[path_size-1];
+                pos_y = previous_path_y[path_size-1];
+
+                double pos_x2 = previous_path_x[path_size-2];
+                double pos_y2 = previous_path_y[path_size-2];
+                angle = atan2(pos_y-pos_y2,pos_x-pos_x2);
+            }
+
+            int num_update = num_points - path_size;
+            double dx = (target_xy[0] - pos_x)/(num_update);
+            double dy = (target_xy[1] - pos_y)/(num_update);
+            for(int i = 0; i < num_points - path_size; i++)
+            {
+                next_x_vals.push_back(pos_x + dx);
+                next_y_vals.push_back(pos_y + dy);
+                pos_x += dx;
+                pos_y += dy;
+
+                // std::cout << "dx_1: " << (target_xy[0] - pos_x) << std::endl;
+                // std::cout << "dy_1: " << (target_xy[1] - pos_y) << std::endl;
+                // std::cout << "dx_2: " << (target_xy[0] - pos_x)/num_update << std::endl;
+                // std::cout << "dy_2: " << (target_xy[1] - pos_y)/num_update << std::endl;
+                // next_x_vals.push_back(pos_x + 0.1);
+                // next_y_vals.push_back(pos_y + 0.1);
+                // pos_x += 0.1;
+                // pos_y += 0.1;
+            }
+
+            // std::cout << "car_s: " << car_s << std::endl;
+            // std::cout << "car_d: " << car_d << std::endl;
+            std::cout << "path_size: " << path_size << std::endl;
+            // std::cout << "angle: " << angle << std::endl;
+            // std::cout << "Previous end S: " << end_path_s << std::endl;
+            // std::cout << "Previous end D: " << end_path_d << std::endl;
+            std::cout << "car_x: " << car_x << std::endl;
+            std::cout << "car_y: " << car_y << std::endl;
+            std::cout << "pos_x: " << pos_x << std::endl;
+            std::cout << "pos_y: " << pos_y << std::endl;
+            // std::cout << "dx: " << (target_xy[0] - pos_x)/num_update << std::endl;
+            // std::cout << "dy: " << (target_xy[1] - pos_y)/num_update << std::endl;
+            // std::cout << "Next_x_vals: " << next_x_vals[0] << std::endl;
+            // std::cout << "Next_y_vals: " << next_y_vals[0] << std::endl;
+            std::cout << "Car Speed: " << car_speed << std::endl;
+            for(int i = 1; i < num_points; i++){
+              std::cout << "Next_x_vals: " << next_x_vals[i] << " / " << "Next_y_vals: " << next_y_vals[i] << std::endl;
+              double next_x_diff_squre = (next_x_vals[i] - next_x_vals[i-1]) * (next_x_vals[i] - next_x_vals[i-1]);
+              double next_y_diff_squre = (next_y_vals[i] - next_y_vals[i-1]) * (next_y_vals[i] - next_y_vals[i-1]);
+              std::cout << "diff_vals: " << sqrt(next_x_diff_squre + next_y_diff_squre) << std::endl;
+            }
+            std::cout << std::endl;
+
+
+
           	msgJson["next_x"] = next_x_vals;
           	msgJson["next_y"] = next_y_vals;
 
@@ -247,7 +344,7 @@ int main() {
 
           	//this_thread::sleep_for(chrono::milliseconds(1000));
           	ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
-          
+
         }
       } else {
         // Manual driving
