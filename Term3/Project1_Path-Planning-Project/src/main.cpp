@@ -238,29 +238,107 @@ int main() {
           	vector<double> next_x_vals;
           	vector<double> next_y_vals;
 
+            vector<double> next_x_bezier;
+            vector<double> next_y_bezier;
+
 
           	// TODO: define a path made up of (x,y) points that the car will visit sequentially every .02 seconds
             // Number of path planning points
-            double dist_inc = 0.3;
-            int num_points = 50;
+            double dist_inc = 0.45;
+            double num_points = 50;
             int road_index;
 
-            // Lane Keeping
-            double target_s = car_s + num_points * dist_inc;
-            double target_d;
+            double num_bezier_points = 5;
 
+            ////////////////////////////////////////////////// Mode Selection //////////////////////////////////////////////////
+            std::string mode;
+            mode = "Lane_Keeping";
+            // 
+            // if (car_s <= 300) {
+            //    mode = "Lane_Keeping";
+            // } else if (car_s <= 400) {
+            //    mode = "Lane_Change_Left";
+            // } else if (car_s <= 450){
+            //   mode = "Lane_Keeping";
+            // } else if (car_s <= 500){
+            //   mode = "Lane_Change_Right";
+            // } else if (car_s <= 600){
+            //   mode = "Lane_Keeping";
+            // } else if (car_s <= 700){
+            //   mode = "Lane_Change_Right";
+            // } else if (car_s <= 800){
+            //   mode = "Lane_Keeping";
+            // } else if (car_s <= 900){
+            //   mode = "Lane_Change_Left";
+            // } else if (car_s <= 1000){
+            //   mode = "Lane_Keeping";
+            // } else if (car_s <= 1100){
+            //   mode = "Lane_Change_Left";
+            // } else {
+            //   mode = "Lane_Keeping";
+            // }
+
+            ////////////////////////////////////////////////// Path Generation //////////////////////////////////////////////////
             // Get current lane
             int current_lane = 0;
             if (car_d <= 4) {
               current_lane = 1; // First lane
-              target_d = 2;
             } else if (car_d <= 8) {
               current_lane = 2;
-              target_d = 6;
             } else {
               current_lane = 3;
-              target_d = 10;
             }
+
+            double target_s = car_s + num_points * dist_inc;
+            double target_d;
+
+            double check_start_lane_change;
+            double target_end_d;
+
+            // Lane Keeping
+            if (mode == "Lane_Keeping"){
+              if (current_lane == 1) {
+                target_d = 2;
+              } else if(current_lane == 2) {
+                target_d = 6;
+              } else {
+                target_d = 10;
+              }
+              check_start_lane_change = 0;
+
+            // Lane Change to Left
+            } else if (mode == "Lane_Change_Left") {
+              // Select Target Lane
+              if (check_start_lane_change == 0) {
+                if (current_lane == 2) {
+                  target_end_d = 2;
+                } else {
+                  target_end_d = 6;
+                }
+                check_start_lane_change = 1;
+              }
+
+              // Lane Change
+              if (end_path_d > target_end_d){
+                target_d = target_d - 0.1;
+              }
+            // Lane Change to Right
+          } else {
+            // Select Target Lane
+            if (check_start_lane_change == 0) {
+              if (current_lane == 1) {
+                target_end_d = 6;
+              } else {
+                target_end_d = 10;
+              }
+              check_start_lane_change = 1;
+            }
+
+            // Lane Change
+            if (end_path_d < target_end_d){
+              target_d = target_d + 0.1;
+            }
+          }
 
             vector<double> target_xy;
             target_xy = getXY(target_s, target_d, map_waypoints_s, map_waypoints_x, map_waypoints_y);
@@ -301,41 +379,48 @@ int main() {
                 next_y_vals.push_back(pos_y + dy);
                 pos_x += dx;
                 pos_y += dy;
-
-                // std::cout << "dx_1: " << (target_xy[0] - pos_x) << std::endl;
-                // std::cout << "dy_1: " << (target_xy[1] - pos_y) << std::endl;
-                // std::cout << "dx_2: " << (target_xy[0] - pos_x)/num_update << std::endl;
-                // std::cout << "dy_2: " << (target_xy[1] - pos_y)/num_update << std::endl;
-                // next_x_vals.push_back(pos_x + 0.1);
-                // next_y_vals.push_back(pos_y + 0.1);
-                // pos_x += 0.1;
-                // pos_y += 0.1;
             }
 
-            // std::cout << "car_s: " << car_s << std::endl;
-            // std::cout << "car_d: " << car_d << std::endl;
-            std::cout << "path_size: " << path_size << std::endl;
-            // std::cout << "angle: " << angle << std::endl;
-            // std::cout << "Previous end S: " << end_path_s << std::endl;
-            // std::cout << "Previous end D: " << end_path_d << std::endl;
-            std::cout << "car_x: " << car_x << std::endl;
-            std::cout << "car_y: " << car_y << std::endl;
-            std::cout << "pos_x: " << pos_x << std::endl;
-            std::cout << "pos_y: " << pos_y << std::endl;
-            // std::cout << "dx: " << (target_xy[0] - pos_x)/num_update << std::endl;
-            // std::cout << "dy: " << (target_xy[1] - pos_y)/num_update << std::endl;
-            // std::cout << "Next_x_vals: " << next_x_vals[0] << std::endl;
-            // std::cout << "Next_y_vals: " << next_y_vals[0] << std::endl;
-            std::cout << "Car Speed: " << car_speed << std::endl;
-            for(int i = 1; i < num_points; i++){
-              std::cout << "Next_x_vals: " << next_x_vals[i] << " / " << "Next_y_vals: " << next_y_vals[i] << std::endl;
-              double next_x_diff_squre = (next_x_vals[i] - next_x_vals[i-1]) * (next_x_vals[i] - next_x_vals[i-1]);
-              double next_y_diff_squre = (next_y_vals[i] - next_y_vals[i-1]) * (next_y_vals[i] - next_y_vals[i-1]);
-              std::cout << "diff_vals: " << sqrt(next_x_diff_squre + next_y_diff_squre) << std::endl;
+            ////////////////////////////////////////////////// Print Information //////////////////////////////////////////////////
+            if (car_speed > 40) {
+              std::cout << "car_s: " << car_s << std::endl;
+              std::cout << "car_d: " << car_d << std::endl;
+              std::cout << "target_d: " << target_d << std::endl;
+              std::cout << "mode: " << mode << std::endl;
+              std::cout << "Car Speed: " << car_speed << std::endl;
+              std::cout << std::endl;
             }
-            std::cout << std::endl;
 
+            ////////////////////////////////////////////////// Smoothing by Bezier Curve //////////////////////////////////////////////////
+            // Smoothing the Vehicle Using Bezier Curve
+            double t = 0;
+            double delta_t_bezier = 1 / (num_points - 1);
+            double bezier_x;
+            double bezier_y;
 
+            for(int i = 0; i < num_points; i++) {
+
+              bezier_x = pow((1-t), 5) * next_x_vals[0] + 5 * pow((1-t), 4) * t * next_x_vals[9] + 10 * pow((1-t), 3) * pow(t,2) * next_x_vals[19] + 10 * pow((1-t), 2) * pow(t,3) * next_x_vals[29] + 5 * (1-t) * pow(t,4) * next_x_vals[39] + pow(t,5) * next_x_vals[49];
+              bezier_y = pow((1-t), 5) * next_y_vals[0] + 5 * pow((1-t), 4) * t * next_y_vals[9] + 10 * pow((1-t), 3) * pow(t,2) * next_y_vals[19] + 10 * pow((1-t), 2) * pow(t,3) * next_y_vals[29] + 5 * (1-t) * pow(t,4) * next_y_vals[39] + pow(t,5) * next_y_vals[49];
+
+              next_x_bezier.push_back(bezier_x);
+              next_y_bezier.push_back(bezier_y);
+
+              t = t + delta_t_bezier;
+            }
+
+            // for(int i = 1; i < num_points; i++){
+            //   std::cout << "Next_x_vals: " << next_x_vals[i] << " / " << "Next_x_bezier: " << next_x_bezier[i] << std::endl;
+            //   std::cout << "Next_y_vals: " << next_y_vals[i] << " / " << "Next_y_bezier: " << next_y_bezier[i] << std::endl;
+            //   // double next_x_diff_squre = (next_x_vals[i] - next_x_vals[i-1]) * (next_x_vals[i] - next_x_vals[i-1]);
+            //   // double next_y_diff_squre = (next_y_vals[i] - next_y_vals[i-1]) * (next_y_vals[i] - next_y_vals[i-1]);
+            //   // std::cout << "diff_vals: " << sqrt(next_x_diff_squre + next_y_diff_squre) << std::endl;
+            // }
+
+            // std::cout << std::endl;
+
+            next_x_vals = next_x_bezier;
+            next_y_vals = next_y_bezier;
 
           	msgJson["next_x"] = next_x_vals;
           	msgJson["next_y"] = next_y_vals;
