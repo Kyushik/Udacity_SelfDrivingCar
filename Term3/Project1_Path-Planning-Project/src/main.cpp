@@ -19,6 +19,10 @@ constexpr double pi() { return M_PI; }
 double deg2rad(double x) { return x * pi() / 180; }
 double rad2deg(double x) { return x * 180 / pi(); }
 
+std::string mode = "Lane_Keeping";
+double dist_inc = 0.45;
+double check_start_lane_change;
+
 // Checks if the SocketIO event has JSON data.
 // If there is data the JSON object in string format will be returned,
 // else the empty string "" will be returned.
@@ -244,41 +248,44 @@ int main() {
 
           	// TODO: define a path made up of (x,y) points that the car will visit sequentially every .02 seconds
             // Number of path planning points
-            double dist_inc = 0.45;
             double num_points = 50;
             int road_index;
 
             double num_bezier_points = 5;
+            double target_end_d;
 
             ////////////////////////////////////////////////// Mode Selection //////////////////////////////////////////////////
-            std::string mode;
-            mode = "Lane_Keeping";
-            // 
-            // if (car_s <= 300) {
-            //    mode = "Lane_Keeping";
-            // } else if (car_s <= 400) {
-            //    mode = "Lane_Change_Left";
-            // } else if (car_s <= 450){
-            //   mode = "Lane_Keeping";
-            // } else if (car_s <= 500){
-            //   mode = "Lane_Change_Right";
-            // } else if (car_s <= 600){
-            //   mode = "Lane_Keeping";
-            // } else if (car_s <= 700){
-            //   mode = "Lane_Change_Right";
-            // } else if (car_s <= 800){
-            //   mode = "Lane_Keeping";
-            // } else if (car_s <= 900){
-            //   mode = "Lane_Change_Left";
-            // } else if (car_s <= 1000){
-            //   mode = "Lane_Keeping";
-            // } else if (car_s <= 1100){
-            //   mode = "Lane_Change_Left";
-            // } else {
-            //   mode = "Lane_Keeping";
-            // }
+            vector<string> possible_actions;
+            if (mode == "Lane_Keeping") {
+              possible_actions = { "Lane_Keeping", "Right_Change_Ready", "Left_Change_Ready" };
+            }
+            if (mode == "Left_Change_Ready") {
+              possible_actions = {  "Left_Change", "Lane_Keeping", "Left_Change_Ready" };
+            }
+            if (mode == "Right_Change_Ready") {
+              possible_actions = {  "Right_Change", "Lane_Keeping", "Right_Change_Ready" };
+            }
+            if (mode == "Left_Change") {
+              possible_actions = { "Left_Change", "Lane_Keeping" };
+            }
+            if (mode == "Right_Change") {
+              possible_actions = { "Right_Change", "Lane_Keeping" };
+            }
 
-            ////////////////////////////////////////////////// Path Generation //////////////////////////////////////////////////
+            vector<vector<double>> vehicle_on_lane1;
+            vector<vector<double>> vehicle_on_lane2;
+            vector<vector<double>> vehicle_on_lane3;
+
+            for(int i = 0; i < sensor_fusion.size(); i++){
+              if (sensor_fusion[i][6] <= 4) {
+                vehicle_on_lane1.push_back(sensor_fusion[i]);
+              } else if (sensor_fusion[i][6] <= 8) {
+                vehicle_on_lane2.push_back(sensor_fusion[i]);
+              } else {
+                vehicle_on_lane3.push_back(sensor_fusion[i]);
+              }
+            }
+
             // Get current lane
             int current_lane = 0;
             if (car_d <= 4) {
@@ -289,14 +296,163 @@ int main() {
               current_lane = 3;
             }
 
+            vector<double> costs;
+            double cost;
+            for(int i = 0; i < possible_actions.size(); i++){
+              // Lane Keeping Cost
+              if (possible_actions[i] == "Lane_Keeping"){
+                double front_s = 0;
+                vector<vector<double>> other_on_current_lane;
+
+                if (current_lane == 1){
+                  other_on_current_lane = vehicle_on_lane1;
+                } else if (current_lane == 2){
+                  other_on_current_lane = vehicle_on_lane2;
+                } else {
+                  other_on_current_lane = vehicle_on_lane3;
+                }
+
+                if (other_on_current_lane.size() == 0) {
+                  cost = 0;
+                } else {
+                  double min_front_s_distance = 9999999;
+                  for(int j = 0; j < other_on_current_lane.size(); j++) {
+                    if (other_on_current_lane[j][5] > car_s) {
+                      if (other_on_current_lane[j][5] < min_front_s_distance) {
+                        min_front_s_distance = other_on_current_lane[j][5];
+                      }
+                    }
+                  }
+                  cost = 10 / (min_front_s_distance - car_s);
+                }
+                costs.push_back(cost);
+              }
+              // Lane Change Ready Right
+              if (possible_actions[i] == "Right_Change_Ready"){
+                vector<vector<double>> other_on_right_lane;
+
+                if (current_lane == 3) {
+                  cost = 100;
+                } else {
+                  if (current_lane == 2){
+                    other_on_right_lane = vehicle_on_lane3;
+                  } else {
+                    other_on_right_lane = vehicle_on_lane2;
+                  }
+                  for(int j = 0; j < other_on_right_lane.size(); j++) {
+                    if (other_on_right_lane[j][5] > car_s - 20 && (other_on_right_lane[j][5] < car_s + 30)){
+                      cost += 0.4;
+                    } else {
+                      cost = 0.3;
+                    }
+                  }
+                }
+                costs.push_back(cost);
+              }
+              // Lane Change Ready Left
+              if (possible_actions[i] == "Left_Change_Ready"){
+                vector<vector<double>> other_on_left_lane;
+
+                if (current_lane == 1) {
+                  cost = 100;
+                } else {
+                  if (current_lane == 2){
+                    other_on_left_lane = vehicle_on_lane1;
+                  } else {
+                    other_on_left_lane = vehicle_on_lane2;
+                  }
+                  for(int j = 0; j < other_on_left_lane.size(); j++) {
+                    if (other_on_left_lane[j][5] > car_s - 20 && (other_on_left_lane[j][5] < car_s + 30)){
+                      cost += 0.4;
+                    } else {
+                      cost = 0.3;
+                    }
+                  }
+                }
+                costs.push_back(cost);
+              }
+              // Lane Change Left
+              if (possible_actions[i] == "Left_Change"){
+                vector<vector<double>> other_on_left_lane;
+
+                // Select Target Lane
+                if (check_start_lane_change == 0) {
+                  if (current_lane == 2) {
+                    target_end_d = 2;
+                    other_on_left_lane = vehicle_on_lane1;
+                  } else {
+                    target_end_d = 6;
+                    other_on_left_lane = vehicle_on_lane2;
+                  }
+                  check_start_lane_change = 1;
+                }
+
+                  if (mode == "Left_Change"){
+                    cost = 0.5 / abs(target_end_d - car_d);
+                    std::cout << abs(target_end_d - car_d) << std::endl;
+                  } else {
+                    for (int j = 0; j < other_on_left_lane.size(); j++){
+                      if (other_on_left_lane[j][5] < car_s + 20 && other_on_left_lane[j][5] > car_s - 10) {
+                        cost = 10;
+                      }
+                    }
+                  }
+                costs.push_back(cost);
+              }
+
+              // Lane Change Right
+              if (possible_actions[i] == "Right_Change"){
+                vector<vector<double>> other_on_right_lane;
+
+                // Select Target Lane
+                if (check_start_lane_change == 0) {
+                  if (current_lane == 1) {
+                    target_end_d = 6;
+                    other_on_right_lane = vehicle_on_lane2;
+                  } else {
+                    target_end_d = 10;
+                    other_on_right_lane = vehicle_on_lane3;
+                  }
+                  check_start_lane_change = 1;
+                }
+
+                if (mode == "Right_Change"){
+                    cost = 0.5 / abs(target_end_d - car_d);
+                    std::cout << abs(target_end_d - car_d) << std::endl;
+                  } else {
+                    for (int j = 0; j < other_on_right_lane.size(); j++){
+                      if (other_on_right_lane[j][5] < car_s + 20 && other_on_right_lane[j][5] > car_s - 10) {
+                        cost = 10;
+                      }
+                    }
+                  }
+                costs.push_back(cost);
+              }
+            }
+
+
+            for(int i = 0; i < possible_actions.size(); i++){
+              std::cout << "Current mode: " << mode << "  /  " << "mode: " << possible_actions[i] << "  /  " << "cost: " << costs[i] << std::endl;
+            }
+
+
+            double min_action_cost = 99999999;
+            for(int i = 0; i < possible_actions.size(); i++){
+              if (costs[i] < min_action_cost){
+                min_action_cost = costs[i];
+                mode = possible_actions[i];
+              }
+            }
+
+            ////////////////////////////////////////////////// Path Generation //////////////////////////////////////////////////
             double target_s = car_s + num_points * dist_inc;
             double target_d;
 
-            double check_start_lane_change;
-            double target_end_d;
+            double target_speed;
 
             // Lane Keeping
             if (mode == "Lane_Keeping"){
+              check_start_lane_change = 0;
               if (current_lane == 1) {
                 target_d = 2;
               } else if(current_lane == 2) {
@@ -304,41 +460,62 @@ int main() {
               } else {
                 target_d = 10;
               }
-              check_start_lane_change = 0;
 
-            // Lane Change to Left
-            } else if (mode == "Lane_Change_Left") {
-              // Select Target Lane
-              if (check_start_lane_change == 0) {
-                if (current_lane == 2) {
-                  target_end_d = 2;
-                } else {
-                  target_end_d = 6;
-                }
-                check_start_lane_change = 1;
-              }
-
+              target_speed = 40;
+              // Lane Change to Left
+            } else if (mode == "Left_Change") {
               // Lane Change
               if (end_path_d > target_end_d){
                 target_d = target_d - 0.1;
               }
-            // Lane Change to Right
-          } else {
-            // Select Target Lane
-            if (check_start_lane_change == 0) {
-              if (current_lane == 1) {
-                target_end_d = 6;
-              } else {
-                target_end_d = 10;
+
+              target_speed = 40;
+
+              // Lane Change to Right
+            } else if (mode == "Right_Change"){
+              // Lane Change
+              if (end_path_d < target_end_d){
+                target_d = target_d + 0.1;
               }
-              check_start_lane_change = 1;
+              target_speed = 40;
+
+            } else if (mode == "Left_Change_Ready"){
+              check_start_lane_change = 0;
+
+              vector<vector<double>> other_on_left_lane;
+              if (current_lane == 2){
+                other_on_left_lane = vehicle_on_lane1;
+              } else {
+                other_on_left_lane = vehicle_on_lane2;
+              }
+
+              for(int j = 0; j < other_on_left_lane.size(); j++){
+                if (other_on_left_lane[j][5] > car_s - 20 && other_on_left_lane[j][5] < car_s + 20){
+                  target_speed = other_on_left_lane[j][3] - 5;
+                }
+              }
+            } else {
+              check_start_lane_change = 0;
+
+              vector<vector<double>> other_on_right_lane;
+              if (current_lane == 1){
+                other_on_right_lane = vehicle_on_lane2;
+              } else {
+                other_on_right_lane = vehicle_on_lane3;
+              }
+
+              for(int j = 0; j < other_on_right_lane.size(); j++){
+                if (other_on_right_lane[j][5] > car_s - 20 && other_on_right_lane[j][5] < car_s + 20){
+                  target_speed = other_on_right_lane[j][3] - 5;
+                }
+              }
             }
 
-            // Lane Change
-            if (end_path_d < target_end_d){
-              target_d = target_d + 0.1;
+            if (car_speed > target_speed) {
+              dist_inc -= 0.001;
+            } else {
+              dist_inc += 0.001;
             }
-          }
 
             vector<double> target_xy;
             target_xy = getXY(target_s, target_d, map_waypoints_s, map_waypoints_x, map_waypoints_y);
@@ -382,14 +559,17 @@ int main() {
             }
 
             ////////////////////////////////////////////////// Print Information //////////////////////////////////////////////////
-            if (car_speed > 40) {
-              std::cout << "car_s: " << car_s << std::endl;
-              std::cout << "car_d: " << car_d << std::endl;
-              std::cout << "target_d: " << target_d << std::endl;
-              std::cout << "mode: " << mode << std::endl;
-              std::cout << "Car Speed: " << car_speed << std::endl;
-              std::cout << std::endl;
-            }
+            std::cout << "car_s: " << car_s << std::endl;
+            std::cout << "car_d: " << car_d << std::endl;
+            std::cout << "target_d: " << target_d << std::endl;
+            std::cout << "mode: " << mode << std::endl;
+            std::cout << "Car Speed: " << car_speed << std::endl;
+            std::cout << "Target Speed: " << target_speed << std::endl;
+            std::cout << "dist_inc: " << dist_inc << std::endl;
+            std::cout << "Target end d: " << target_end_d << std::endl;
+            std::cout << "check_start_lane_change: " << check_start_lane_change << std::endl;
+            std::cout << std::endl;
+
 
             ////////////////////////////////////////////////// Smoothing by Bezier Curve //////////////////////////////////////////////////
             // Smoothing the Vehicle Using Bezier Curve
