@@ -251,8 +251,9 @@ int main() {
             double num_points = 50;
             int road_index;
 
-            double num_bezier_points = 5;
             double target_end_d;
+
+            double target_speed_default = 40;
 
             ////////////////////////////////////////////////// Mode Selection //////////////////////////////////////////////////
             vector<string> possible_actions;
@@ -298,32 +299,41 @@ int main() {
 
             vector<double> costs;
             double cost;
+
+            double front_vehicle_vel;
+            double keep_end_d;
+
             for(int i = 0; i < possible_actions.size(); i++){
               // Lane Keeping Cost
               if (possible_actions[i] == "Lane_Keeping"){
                 double front_s = 0;
+                double TTC;
                 vector<vector<double>> other_on_current_lane;
 
                 if (current_lane == 1){
                   other_on_current_lane = vehicle_on_lane1;
+                  keep_end_d = 2;
                 } else if (current_lane == 2){
                   other_on_current_lane = vehicle_on_lane2;
+                  keep_end_d = 6;
                 } else {
                   other_on_current_lane = vehicle_on_lane3;
+                  keep_end_d = 10;
                 }
 
                 if (other_on_current_lane.size() == 0) {
                   cost = 0;
                 } else {
-                  double min_front_s_distance = 9999999;
+                  double min_front_s = 9999999;
                   for(int j = 0; j < other_on_current_lane.size(); j++) {
                     if (other_on_current_lane[j][5] > car_s) {
-                      if (other_on_current_lane[j][5] < min_front_s_distance) {
-                        min_front_s_distance = other_on_current_lane[j][5];
+                      if (other_on_current_lane[j][5] < min_front_s) {
+                        min_front_s = other_on_current_lane[j][5];
+                        front_vehicle_vel = 2.2369 * sqrt(pow(other_on_current_lane[j][3], 2) + pow(other_on_current_lane[j][4], 2));
                       }
                     }
                   }
-                  cost = 10 / (min_front_s_distance - car_s);
+                  cost = 10 / (min_front_s - car_s);
                 }
                 costs.push_back(cost);
               }
@@ -339,11 +349,10 @@ int main() {
                   } else {
                     other_on_right_lane = vehicle_on_lane2;
                   }
+                  cost = 0.3;
                   for(int j = 0; j < other_on_right_lane.size(); j++) {
-                    if (other_on_right_lane[j][5] > car_s - 20 && (other_on_right_lane[j][5] < car_s + 30)){
-                      cost += 0.4;
-                    } else {
-                      cost = 0.3;
+                    if (other_on_right_lane[j][5] > car_s - 20 && (other_on_right_lane[j][5] < car_s + 50)){
+                      cost += 0.1;
                     }
                   }
                 }
@@ -361,11 +370,10 @@ int main() {
                   } else {
                     other_on_left_lane = vehicle_on_lane2;
                   }
+                  cost = 0.3;
                   for(int j = 0; j < other_on_left_lane.size(); j++) {
-                    if (other_on_left_lane[j][5] > car_s - 20 && (other_on_left_lane[j][5] < car_s + 30)){
-                      cost += 0.4;
-                    } else {
-                      cost = 0.3;
+                    if (other_on_left_lane[j][5] > car_s - 20 && (other_on_left_lane[j][5] < car_s + 50)){
+                      cost += 0.1;
                     }
                   }
                 }
@@ -461,7 +469,7 @@ int main() {
                 target_d = 10;
               }
 
-              target_speed = 40;
+              target_speed = target_speed_default;
               // Lane Change to Left
             } else if (mode == "Left_Change") {
               // Lane Change
@@ -469,7 +477,7 @@ int main() {
                 target_d = target_d - 0.1;
               }
 
-              target_speed = 40;
+              target_speed = target_speed_default;
 
               // Lane Change to Right
             } else if (mode == "Right_Change"){
@@ -477,7 +485,7 @@ int main() {
               if (end_path_d < target_end_d){
                 target_d = target_d + 0.1;
               }
-              target_speed = 40;
+              target_speed = target_speed_default;
 
             } else if (mode == "Left_Change_Ready"){
               check_start_lane_change = 0;
@@ -491,7 +499,7 @@ int main() {
 
               for(int j = 0; j < other_on_left_lane.size(); j++){
                 if (other_on_left_lane[j][5] > car_s - 20 && other_on_left_lane[j][5] < car_s + 20){
-                  target_speed = other_on_left_lane[j][3] - 5;
+                  target_speed = front_vehicle_vel - 1;
                 }
               }
             } else {
@@ -506,15 +514,20 @@ int main() {
 
               for(int j = 0; j < other_on_right_lane.size(); j++){
                 if (other_on_right_lane[j][5] > car_s - 20 && other_on_right_lane[j][5] < car_s + 20){
-                  target_speed = other_on_right_lane[j][3] - 5;
+                  target_speed = front_vehicle_vel - 1;
                 }
               }
             }
 
+            // Decel
+            if ( abs(keep_end_d - car_d) > 0.3 && mode == "Lane_Keeping") {
+              target_speed = 30;
+            }
+
             if (car_speed > target_speed) {
-              dist_inc -= 0.001;
+              dist_inc -= 0.002;
             } else {
-              dist_inc += 0.001;
+              dist_inc += 0.002;
             }
 
             vector<double> target_xy;
@@ -559,6 +572,7 @@ int main() {
             }
 
             ////////////////////////////////////////////////// Print Information //////////////////////////////////////////////////
+            std::cout << "front_vehicle_vel: " << front_vehicle_vel << std::endl;
             std::cout << "car_s: " << car_s << std::endl;
             std::cout << "car_d: " << car_d << std::endl;
             std::cout << "target_d: " << target_d << std::endl;
@@ -580,8 +594,16 @@ int main() {
 
             for(int i = 0; i < num_points; i++) {
 
-              bezier_x = pow((1-t), 5) * next_x_vals[0] + 5 * pow((1-t), 4) * t * next_x_vals[9] + 10 * pow((1-t), 3) * pow(t,2) * next_x_vals[19] + 10 * pow((1-t), 2) * pow(t,3) * next_x_vals[29] + 5 * (1-t) * pow(t,4) * next_x_vals[39] + pow(t,5) * next_x_vals[49];
-              bezier_y = pow((1-t), 5) * next_y_vals[0] + 5 * pow((1-t), 4) * t * next_y_vals[9] + 10 * pow((1-t), 3) * pow(t,2) * next_y_vals[19] + 10 * pow((1-t), 2) * pow(t,3) * next_y_vals[29] + 5 * (1-t) * pow(t,4) * next_y_vals[39] + pow(t,5) * next_y_vals[49];
+              bezier_x = pow((1-t), 7) * next_x_vals[0] + 7 * pow((1-t), 6) * t * next_x_vals[7] + 21 * pow((1-t), 5) * pow(t,2) * next_x_vals[14] + 35 * pow((1-t), 4) * pow(t,3) * next_x_vals[21]
+                         + 35 * pow((1-t), 3) * pow(t,4) * next_x_vals[28] + 21 * pow((1-t), 2) * pow(t,5) * next_x_vals[35] + 7 * (1-t) * pow(t,6) * next_x_vals[42] + pow(t,7) * next_x_vals[49];
+              bezier_y = pow((1-t), 7) * next_y_vals[0] + 7 * pow((1-t), 6) * t * next_y_vals[7] + 21 * pow((1-t), 5) * pow(t,2) * next_y_vals[14] + 35 * pow((1-t), 4) * pow(t,3) * next_y_vals[21]
+                         + 35 * pow((1-t), 3) * pow(t,4) * next_y_vals[28] + 21 * pow((1-t), 2) * pow(t,5) * next_y_vals[35] + 7 * (1-t) * pow(t,6) * next_y_vals[42] + pow(t,7) * next_y_vals[49];
+
+              // bezier_x = pow((1-t), 5) * next_x_vals[0] + 5 * pow((1-t), 4) * t * next_x_vals[9] + 10 * pow((1-t), 3) * pow(t,2) * next_x_vals[19] + 10 * pow((1-t), 2) * pow(t,3) * next_x_vals[29] + 5 * (1-t) * pow(t,4) * next_x_vals[39] + pow(t,5) * next_x_vals[49];
+              // bezier_y = pow((1-t), 5) * next_y_vals[0] + 5 * pow((1-t), 4) * t * next_y_vals[9] + 10 * pow((1-t), 3) * pow(t,2) * next_y_vals[19] + 10 * pow((1-t), 2) * pow(t,3) * next_y_vals[29] + 5 * (1-t) * pow(t,4) * next_y_vals[39] + pow(t,5) * next_y_vals[49];
+
+              // bezier_x = pow((1-t), 2) * next_x_vals[0] + 2 * pow((1-t), 1) * t * next_x_vals[25] + pow(t,2) * next_x_vals[49];
+              // bezier_y = pow((1-t), 2) * next_y_vals[0] + 2 * pow((1-t), 1) * t * next_y_vals[25] + pow(t,2) * next_y_vals[49];
 
               next_x_bezier.push_back(bezier_x);
               next_y_bezier.push_back(bezier_y);
