@@ -397,11 +397,10 @@ int main() {
 
                   if (mode == "Left_Change"){
                     cost = 0.5 / abs(target_end_d - car_d);
-                    std::cout << abs(target_end_d - car_d) << std::endl;
                   } else {
                     for (int j = 0; j < other_on_left_lane.size(); j++){
                       if (other_on_left_lane[j][5] < car_s + 20 && other_on_left_lane[j][5] > car_s - 10) {
-                        cost = 10;
+                        cost = 100;
                       }
                     }
                   }
@@ -426,11 +425,10 @@ int main() {
 
                 if (mode == "Right_Change"){
                     cost = 0.5 / abs(target_end_d - car_d);
-                    std::cout << abs(target_end_d - car_d) << std::endl;
                   } else {
                     for (int j = 0; j < other_on_right_lane.size(); j++){
                       if (other_on_right_lane[j][5] < car_s + 20 && other_on_right_lane[j][5] > car_s - 10) {
-                        cost = 10;
+                        cost = 100;
                       }
                     }
                   }
@@ -598,12 +596,6 @@ int main() {
                          + 35 * pow((1-t), 3) * pow(t,4) * next_x_vals[28] + 21 * pow((1-t), 2) * pow(t,5) * next_x_vals[35] + 7 * (1-t) * pow(t,6) * next_x_vals[42] + pow(t,7) * next_x_vals[49];
               bezier_y = pow((1-t), 7) * next_y_vals[0] + 7 * pow((1-t), 6) * t * next_y_vals[7] + 21 * pow((1-t), 5) * pow(t,2) * next_y_vals[14] + 35 * pow((1-t), 4) * pow(t,3) * next_y_vals[21]
                          + 35 * pow((1-t), 3) * pow(t,4) * next_y_vals[28] + 21 * pow((1-t), 2) * pow(t,5) * next_y_vals[35] + 7 * (1-t) * pow(t,6) * next_y_vals[42] + pow(t,7) * next_y_vals[49];
-
-              // bezier_x = pow((1-t), 5) * next_x_vals[0] + 5 * pow((1-t), 4) * t * next_x_vals[9] + 10 * pow((1-t), 3) * pow(t,2) * next_x_vals[19] + 10 * pow((1-t), 2) * pow(t,3) * next_x_vals[29] + 5 * (1-t) * pow(t,4) * next_x_vals[39] + pow(t,5) * next_x_vals[49];
-              // bezier_y = pow((1-t), 5) * next_y_vals[0] + 5 * pow((1-t), 4) * t * next_y_vals[9] + 10 * pow((1-t), 3) * pow(t,2) * next_y_vals[19] + 10 * pow((1-t), 2) * pow(t,3) * next_y_vals[29] + 5 * (1-t) * pow(t,4) * next_y_vals[39] + pow(t,5) * next_y_vals[49];
-
-              // bezier_x = pow((1-t), 2) * next_x_vals[0] + 2 * pow((1-t), 1) * t * next_x_vals[25] + pow(t,2) * next_x_vals[49];
-              // bezier_y = pow((1-t), 2) * next_y_vals[0] + 2 * pow((1-t), 1) * t * next_y_vals[25] + pow(t,2) * next_y_vals[49];
 
               next_x_bezier.push_back(bezier_x);
               next_y_bezier.push_back(bezier_y);
