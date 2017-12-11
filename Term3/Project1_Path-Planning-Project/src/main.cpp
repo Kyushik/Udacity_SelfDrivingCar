@@ -20,7 +20,7 @@ double deg2rad(double x) { return x * pi() / 180; }
 double rad2deg(double x) { return x * 180 / pi(); }
 
 std::string mode = "Lane_Keeping";
-double dist_inc = 0.45;
+double dist_inc = 0.02;
 double check_start_lane_change;
 
 // Checks if the SocketIO event has JSON data.
@@ -253,7 +253,7 @@ int main() {
 
             double target_end_d;
 
-            double target_speed_default = 40;
+            double target_speed_default = 42;
 
             ////////////////////////////////////////////////// Mode Selection //////////////////////////////////////////////////
             vector<string> possible_actions;
@@ -302,6 +302,7 @@ int main() {
 
             double front_vehicle_vel;
             double keep_end_d;
+            double d_bias = 0.2;
 
             for(int i = 0; i < possible_actions.size(); i++){
               // Lane Keeping Cost
@@ -312,13 +313,13 @@ int main() {
 
                 if (current_lane == 1){
                   other_on_current_lane = vehicle_on_lane1;
-                  keep_end_d = 2;
+                  keep_end_d = 2 + d_bias;
                 } else if (current_lane == 2){
                   other_on_current_lane = vehicle_on_lane2;
-                  keep_end_d = 6;
+                  keep_end_d = 6 + d_bias;
                 } else {
                   other_on_current_lane = vehicle_on_lane3;
-                  keep_end_d = 10;
+                  keep_end_d = 10 + d_bias;
                 }
 
                 if (other_on_current_lane.size() == 0) {
@@ -351,7 +352,7 @@ int main() {
                   }
                   cost = 0.3;
                   for(int j = 0; j < other_on_right_lane.size(); j++) {
-                    if (other_on_right_lane[j][5] > car_s - 20 && (other_on_right_lane[j][5] < car_s + 50)){
+                    if (other_on_right_lane[j][5] > car_s - 20 && (other_on_right_lane[j][5] < car_s + 60)){
                       cost += 0.1;
                     }
                   }
@@ -372,7 +373,7 @@ int main() {
                   }
                   cost = 0.3;
                   for(int j = 0; j < other_on_left_lane.size(); j++) {
-                    if (other_on_left_lane[j][5] > car_s - 20 && (other_on_left_lane[j][5] < car_s + 50)){
+                    if (other_on_left_lane[j][5] > car_s - 20 && (other_on_left_lane[j][5] < car_s + 60)){
                       cost += 0.1;
                     }
                   }
@@ -396,7 +397,7 @@ int main() {
                 }
 
                   if (mode == "Left_Change"){
-                    cost = 0.5 / abs(target_end_d - car_d);
+                    cost = 0.4 / abs(target_end_d - car_d);
                   } else {
                     for (int j = 0; j < other_on_left_lane.size(); j++){
                       if (other_on_left_lane[j][5] < car_s + 20 && other_on_left_lane[j][5] > car_s - 10) {
@@ -424,7 +425,7 @@ int main() {
                 }
 
                 if (mode == "Right_Change"){
-                    cost = 0.5 / abs(target_end_d - car_d);
+                    cost = 0.4 / abs(target_end_d - car_d);
                   } else {
                     for (int j = 0; j < other_on_right_lane.size(); j++){
                       if (other_on_right_lane[j][5] < car_s + 20 && other_on_right_lane[j][5] > car_s - 10) {
@@ -460,14 +461,23 @@ int main() {
             if (mode == "Lane_Keeping"){
               check_start_lane_change = 0;
               if (current_lane == 1) {
-                target_d = 2;
+                target_d = 2 + d_bias;
               } else if(current_lane == 2) {
-                target_d = 6;
+                target_d = 6 + d_bias;
               } else {
-                target_d = 10;
+                target_d = 10 + d_bias;
               }
 
               target_speed = target_speed_default;
+
+              // Decel
+              if ( abs(target_d - car_d) > 0.2 ) {
+                target_speed = 30;
+                target_d = target_d - (d_bias / 2);
+              } else {
+                target_speed = target_speed_default;
+              }
+
               // Lane Change to Left
             } else if (mode == "Left_Change") {
               // Lane Change
@@ -496,8 +506,8 @@ int main() {
               }
 
               for(int j = 0; j < other_on_left_lane.size(); j++){
-                if (other_on_left_lane[j][5] > car_s - 20 && other_on_left_lane[j][5] < car_s + 20){
-                  target_speed = front_vehicle_vel - 1;
+                if (other_on_left_lane[j][5] > car_s - 20 && other_on_left_lane[j][5] < car_s + 30){
+                  target_speed = front_vehicle_vel - 2;
                 }
               }
             } else {
@@ -511,21 +521,16 @@ int main() {
               }
 
               for(int j = 0; j < other_on_right_lane.size(); j++){
-                if (other_on_right_lane[j][5] > car_s - 20 && other_on_right_lane[j][5] < car_s + 20){
-                  target_speed = front_vehicle_vel - 1;
+                if (other_on_right_lane[j][5] > car_s - 20 && other_on_right_lane[j][5] < car_s + 30){
+                  target_speed = front_vehicle_vel - 2;
                 }
               }
             }
 
-            // Decel
-            if ( abs(keep_end_d - car_d) > 0.3 && mode == "Lane_Keeping") {
-              target_speed = 30;
-            }
-
             if (car_speed > target_speed) {
-              dist_inc -= 0.002;
+              dist_inc -= 0.0015;
             } else {
-              dist_inc += 0.002;
+              dist_inc += 0.001;
             }
 
             vector<double> target_xy;
@@ -596,6 +601,12 @@ int main() {
                          + 35 * pow((1-t), 3) * pow(t,4) * next_x_vals[28] + 21 * pow((1-t), 2) * pow(t,5) * next_x_vals[35] + 7 * (1-t) * pow(t,6) * next_x_vals[42] + pow(t,7) * next_x_vals[49];
               bezier_y = pow((1-t), 7) * next_y_vals[0] + 7 * pow((1-t), 6) * t * next_y_vals[7] + 21 * pow((1-t), 5) * pow(t,2) * next_y_vals[14] + 35 * pow((1-t), 4) * pow(t,3) * next_y_vals[21]
                          + 35 * pow((1-t), 3) * pow(t,4) * next_y_vals[28] + 21 * pow((1-t), 2) * pow(t,5) * next_y_vals[35] + 7 * (1-t) * pow(t,6) * next_y_vals[42] + pow(t,7) * next_y_vals[49];
+
+              // bezier_x = pow((1-t), 5) * next_x_vals[0] + 5 * pow((1-t), 4) * t * next_x_vals[9] + 10 * pow((1-t), 3) * pow(t,2) * next_x_vals[19] + 10 * pow((1-t), 2) * pow(t,3) * next_x_vals[29] + 5 * (1-t) * pow(t,4) * next_x_vals[39] + pow(t,5) * next_x_vals[49];
+              // bezier_y = pow((1-t), 5) * next_y_vals[0] + 5 * pow((1-t), 4) * t * next_y_vals[9] + 10 * pow((1-t), 3) * pow(t,2) * next_y_vals[19] + 10 * pow((1-t), 2) * pow(t,3) * next_y_vals[29] + 5 * (1-t) * pow(t,4) * next_y_vals[39] + pow(t,5) * next_y_vals[49];
+
+              // bezier_x = pow((1-t), 2) * next_x_vals[0] + 2 * pow((1-t), 1) * t * next_x_vals[25] + pow(t,2) * next_x_vals[49];
+              // bezier_y = pow((1-t), 2) * next_y_vals[0] + 2 * pow((1-t), 1) * t * next_y_vals[25] + pow(t,2) * next_y_vals[49];
 
               next_x_bezier.push_back(bezier_x);
               next_y_bezier.push_back(bezier_y);
